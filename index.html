@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J_VAPES.KE | Premium Disposables</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            black: '#0a0a0a',
+                            gray: '#f5f5f5',
+                            accent: '#25D366', // WhatsApp Green
+                            sale: '#ef4444'    // Sale Red
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Smooth Scrolling & Scrollbar Hide */
+        html { scroll-behavior: smooth; }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Animations */
+        .fade-enter { animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Toast Animation */
+        .toast-enter { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast-exit { transform: translateX(-50%) translateY(20px); opacity: 0; }
+    </style>
+</head>
+<body class="bg-white text-brand-black antialiased selection:bg-brand-black selection:text-white">
+
+    <!-- 1. AGE GATE OVERLAY -->
+    <div id="age-gate" class="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center p-8 text-center">
+        <div class="max-w-md w-full animate-pulse">
+            <h1 class="text-5xl font-black tracking-tighter mb-2">18+</h1>
+            <h2 class="text-xl font-bold uppercase tracking-widest mb-6">Age Verification Required</h2>
+            <p class="text-gray-500 mb-8 text-sm leading-relaxed">
+                You must be of legal smoking age (18+) to enter J_VAPES.KE. 
+                Products contain nicotine, an addictive chemical.
+            </p>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="verifyAge(false)" class="border border-gray-200 py-4 text-xs font-bold uppercase tracking-widest hover:bg-gray-50 transition">Exit</button>
+                <button onclick="verifyAge(true)" class="bg-brand-black text-white py-4 text-xs font-bold uppercase tracking-widest hover:bg-gray-800 transition">I am 18+</button>
+            </div>
+            <p id="age-error" class="text-red-500 text-xs mt-4 hidden font-bold uppercase tracking-widest">Access Denied</p>
+        </div>
+    </div>
+
+    <!-- 2. NAVBAR -->
+    <nav class="fixed top-0 w-full bg-white/90 backdrop-blur-md border-b border-gray-100 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <!-- Brand -->
+            <div class="text-xl font-black tracking-tighter cursor-pointer" onclick="app.view='store'; render();">
+                J_VAPES<span class="text-gray-300">.KE</span>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-6">
+                <button onclick="app.toggleCart()" class="relative group">
+                    <span class="text-xs font-bold uppercase tracking-widest group-hover:text-gray-500 transition">Bag</span>
+                    <span id="cart-count" class="absolute -top-1 -right-2 w-2 h-2 bg-brand-accent rounded-full hidden"></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 3. MAIN STORE INTERFACE -->
+    <div id="app-container" class="pt-20 pb-24 min-h-screen flex flex-col max-w-7xl mx-auto">
+        
+        <!-- Search & Filter Header -->
+        <header class="px-6 mb-8 fade-enter">
+            <h1 class="text-4xl md:text-6xl font-black tracking-tighter mb-6">INVENTORY.</h1>
+            
+            <!-- Controls -->
+            <div class="sticky top-20 bg-white/95 backdrop-blur z-40 py-4 -mx-6 px-6 border-b border-gray-100">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <!-- Search -->
+                    <div class="relative flex-1">
+                        <input type="text" id="search" placeholder="Search brands, flavors..." 
+                               oninput="app.handleSearch(this.value)"
+                               class="w-full bg-brand-gray border-none rounded-none py-3 px-4 text-sm font-bold uppercase placeholder:text-gray-400 focus:ring-1 focus:ring-black transition">
+                        <svg class="absolute right-4 top-3.5 text-gray-400 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    
+                    <!-- Filters -->
+                    <div class="flex gap-2 overflow-x-auto no-scrollbar">
+                        <select id="filter-brand" onchange="app.handleFilter()" class="bg-white border border-gray-200 py-3 px-4 text-xs font-bold uppercase tracking-wide cursor-pointer focus:border-black outline-none min-w-[120px]">
+                            <option value="all">Brand: All</option>
+                        </select>
+                        <select id="filter-puffs" onchange="app.handleFilter()" class="bg-white border border-gray-200 py-3 px-4 text-xs font-bold uppercase tracking-wide cursor-pointer focus:border-black outline-none min-w-[120px]">
+                            <option value="all">Puffs: All</option>
+                        </select>
+                        <select id="filter-price" onchange="app.handleFilter()" class="bg-white border border-gray-200 py-3 px-4 text-xs font-bold uppercase tracking-wide cursor-pointer focus:border-black outline-none min-w-[120px]">
+                            <option value="all">Price: All</option>
+                            <option value="low">Under 1,500</option>
+                            <option value="mid">1,500 - 2,500</option>
+                            <option value="high">Above 2,500</option>
+                            <option value="sale">On Sale Only</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Product Grid -->
+        <main id="product-grid" class="px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12 fade-enter">
+            <!-- Generated via JS -->
+        </main>
+        
+        <!-- Empty State (Hidden by default) -->
+        <div id="empty-state" class="hidden flex-col items-center justify-center py-20 text-gray-400">
+            <p class="uppercase text-xs tracking-widest font-bold">No Products Found</p>
+            <button onclick="app.resetFilters()" class="mt-4 text-black underline text-xs font-bold uppercase">Clear Filters</button>
+        </div>
+
+    </div>
+
+    <!-- 4. CART SIDEBAR -->
+    <div id="cart-overlay" onclick="app.toggleCart()" class="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60] hidden transition-opacity opacity-0"></div>
+    <div id="cart-drawer" class="fixed inset-y-0 right-0 w-full md:w-[480px] bg-white z-[70] transform translate-x-full transition-transform duration-500 shadow-2xl flex flex-col">
+        <div class="p-8 border-b border-gray-100 flex justify-between items-center">
+            <h2 class="text-3xl font-black tracking-tighter">BAG</h2>
+            <button onclick="app.toggleCart()" class="text-gray-400 hover:text-black transition text-sm font-bold uppercase">Close</button>
+        </div>
+        
+        <div id="cart-items" class="flex-1 overflow-y-auto p-8 space-y-8">
+            <!-- Items go here -->
+        </div>
+
+        <div class="p-8 bg-brand-gray border-t border-gray-200">
+            <div class="flex justify-between items-end mb-6">
+                <span class="text-xs font-bold uppercase tracking-widest text-gray-400">Total Estimate</span>
+                <span id="cart-total" class="text-2xl font-black tracking-tighter">KES 0</span>
+            </div>
+            <button onclick="app.checkout()" class="w-full bg-brand-accent text-white py-5 uppercase text-xs font-bold tracking-[0.2em] hover:bg-[#20bd5a] transition flex items-center justify-center gap-3">
+                Checkout WhatsApp
+            </button>
+        </div>
+    </div>
+
+    <!-- 5. ADMIN PANEL (Hidden) -->
+    <div id="admin-panel" class="hidden fixed inset-0 bg-white z-[80] overflow-y-auto fade-enter">
+        <div class="max-w-4xl mx-auto px-6 py-20">
+            <div class="flex justify-between items-end mb-12 border-b-2 border-black pb-6">
+                <h1 class="text-4xl font-black tracking-tighter">STOCKROOM</h1>
+                <button onclick="app.toggleAdmin(false)" class="text-xs font-bold uppercase tracking-widest hover:underline">Exit Admin</button>
+            </div>
+
+            <!-- Add Form -->
+            <div class="bg-brand-gray p-8 mb-12">
+                <h3 class="text-xs font-bold uppercase tracking-widest mb-4">Add New Product</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input id="adm-name" placeholder="Product Name" class="p-4 text-sm font-bold bg-white border-none focus:ring-1 focus:ring-black">
+                    <input id="adm-brand" placeholder="Brand (e.g. ElfBar)" class="p-4 text-sm font-bold bg-white border-none focus:ring-1 focus:ring-black">
+                    <input id="adm-puffs" placeholder="Puffs (e.g. 5000)" class="p-4 text-sm font-bold bg-white border-none focus:ring-1 focus:ring-black">
+                    <div class="grid grid-cols-2 gap-4">
+                        <input id="adm-price" type="number" placeholder="Price (KES)" class="p-4 text-sm font-bold bg-white border-none focus:ring-1 focus:ring-black">
+                        <input id="adm-discount" type="number" placeholder="Discount % (Opt)" class="p-4 text-sm font-bold bg-white border-none focus:ring-1 focus:ring-black text-brand-sale placeholder:text-red-300">
+                    </div>
+                    <input id="adm-img" placeholder="Image URL" class="p-4 text-sm font-bold bg-white border-none focus:ring-1 focus:ring-black md:col-span-2">
+                </div>
+                <button onclick="app.addProduct()" class="mt-4 w-full bg-black text-white py-4 text-xs font-bold uppercase tracking-widest hover:bg-gray-800">Add Item</button>
+            </div>
+
+            <!-- Stock Table -->
+            <table class="w-full text-left">
+                <thead class="text-[10px] uppercase font-bold text-gray-400 border-b">
+                    <tr><th class="py-4">Product</th><th class="py-4">Stats</th><th class="py-4">Price</th><th class="py-4 text-right">Action</th></tr>
+                </thead>
+                <tbody id="admin-list" class="divide-y divide-gray-100 text-sm font-bold"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 6. FOOTER -->
+    <footer class="bg-black text-white py-16 px-6">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div>
+                <h2 class="text-2xl font-black tracking-tighter mb-4">J_VAPES<span class="text-gray-600">.KE</span></h2>
+                <div class="text-[10px] uppercase tracking-widest text-gray-500 space-y-2">
+                    <p>Nairobi, Kenya</p>
+                    <p>Strictly 18+ Legal Age</p>
+                    <p>Delivery Available 24/7</p>
+                </div>
+            </div>
+            <div class="md:text-right">
+                <p class="text-[10px] text-gray-600 border-l-2 md:border-l-0 md:border-r-2 border-gray-800 pl-4 md:pl-0 md:pr-4 leading-relaxed max-w-xs md:ml-auto">
+                    WARNING: These products contain nicotine. Nicotine is an addictive chemical. 
+                    Not for use by minors, pregnant women, or non-smokers.
+                </p>
+            </div>
+        </div>
+        <!-- Secret Admin Trigger -->
+        <div class="text-center mt-20">
+            <button onclick="app.attemptLogin()" class="text-[10px] font-bold uppercase tracking-widest text-gray-800 hover:text-gray-600 transition">
+                &copy; 2024 J_VAPES.KE
+            </button>
+        </div>
+    </footer>
+
+    <!-- 7. TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-black text-white px-8 py-4 text-xs font-bold uppercase tracking-widest shadow-2xl z-[90] opacity-0 pointer-events-none transition-all duration-300">
+        Item Added
+    </div>
+
+    <!-- JAVASCRIPT APP -->
+    <script>
+        const app = {
+            data: [],
+            cart: [],
+            filter: { search: '', brand: 'all', puffs: 'all', price: 'all' },
+            config: {
+                phone: '254700000000', // YOUR NUMBER
+                pin: '254',           // ADMIN PIN
+                storageKey: 'j_vapes_inventory_v4' // Updated Key
+            },
+
+            // --- INITIALIZATION ---
+            init() {
+                // Load Data
+                const stored = localStorage.getItem(this.config.storageKey);
+                if (stored) {
+                    this.data = JSON.parse(stored);
+                } else {
+                    // Seed Data with Offer Example
+                    this.data = [
+                        { id: 1, name: "Strawberry Kiwi", brand: "ElfBar", puffs: "5000", price: 1500, discount: 0, img: "https://images.unsplash.com/photo-1534353473418-4cfa6c56fd38?auto=format&fit=crop&q=80&w=600" },
+                        { id: 2, name: "Blue Razz Ice", brand: "GeekBar", puffs: "7000", price: 1800, discount: 10, img: "https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=600" }, // 10% OFF
+                        { id: 3, name: "Cool Mint", brand: "Vozol", puffs: "10000", price: 2200, discount: 0, img: "https://images.unsplash.com/photo-1628518973693-e575b5b48593?auto=format&fit=crop&q=80&w=600" },
+                        { id: 4, name: "Lush Ice", brand: "ElfBar", puffs: "5000", price: 1500, discount: 20, img: "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&q=80&w=600" } // 20% OFF
+                    ];
+                    this.save();
+                }
+                
+                this.populateDropdowns();
+                this.renderStore();
+            },
+
+            save() {
+                localStorage.setItem(this.config.storageKey, JSON.stringify(this.data));
+            },
+
+            // --- STORE LOGIC ---
+            renderStore() {
+                const grid = document.getElementById('product-grid');
+                const empty = document.getElementById('empty-state');
+                
+                // Filter
+                const filtered = this.data.filter(p => {
+                    const matchSearch = (p.name + p.brand).toLowerCase().includes(this.filter.search.toLowerCase());
+                    const matchBrand = this.filter.brand === 'all' || p.brand === this.filter.brand;
+                    const matchPuffs = this.filter.puffs === 'all' || p.puffs === this.filter.puffs;
+                    
+                    // Effective Price for filter logic
+                    const finalPrice = p.discount ? Math.round(p.price * (1 - p.discount/100)) : p.price;
+                    
+                    let matchPrice = true;
+                    if(this.filter.price === 'low') matchPrice = finalPrice < 1500;
+                    if(this.filter.price === 'mid') matchPrice = finalPrice >= 1500 && finalPrice <= 2500;
+                    if(this.filter.price === 'high') matchPrice = finalPrice > 2500;
+                    if(this.filter.price === 'sale') matchPrice = p.discount > 0;
+                    
+                    return matchSearch && matchBrand && matchPuffs && matchPrice;
+                });
+
+                if (filtered.length === 0) {
+                    grid.innerHTML = '';
+                    empty.classList.remove('hidden');
+                    empty.classList.add('flex');
+                    return;
+                }
+
+                empty.classList.add('hidden');
+                empty.classList.remove('flex');
+
+                grid.innerHTML = filtered.map(p => {
+                    const hasDiscount = p.discount && p.discount > 0;
+                    const finalPrice = hasDiscount ? Math.round(p.price * (1 - p.discount/100)) : p.price;
+                    
+                    return `
+                    <div class="group relative cursor-pointer">
+                        <div class="aspect-[4/5] bg-brand-gray overflow-hidden mb-4 relative">
+                            <img src="${p.img}" class="w-full h-full object-cover mix-blend-multiply transition duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" loading="lazy">
+                            <div class="absolute top-2 left-2 flex flex-col items-start gap-1">
+                                <span class="bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider shadow-sm">${p.brand}</span>
+                                <span class="bg-black text-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider shadow-sm">${p.puffs}</span>
+                            </div>
+                            
+                            ${hasDiscount ? `<div class="absolute top-2 right-2 bg-brand-sale text-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider shadow-sm">-${p.discount}%</div>` : ''}
+                            
+                            <button onclick="app.addToCart(${p.id})" class="absolute bottom-0 right-0 w-12 h-12 bg-black text-white flex items-center justify-center translate-y-full group-hover:translate-y-0 transition duration-300 z-10">
+                                <span class="text-xl">+</span>
+                            </button>
+                        </div>
+                        <h3 class="text-sm font-bold uppercase tracking-wider truncate">${p.name}</h3>
+                        <div class="flex items-center gap-2 mt-1">
+                            <p class="text-xs ${hasDiscount ? 'text-brand-sale' : 'text-gray-500'} font-bold">KES ${finalPrice.toLocaleString()}</p>
+                            ${hasDiscount ? `<p class="text-[10px] text-gray-400 font-bold line-through">KES ${p.price.toLocaleString()}</p>` : ''}
+                        </div>
+                    </div>
+                `}).join('');
+            },
+
+            populateDropdowns() {
+                const brands = [...new Set(this.data.map(i => i.brand))].sort();
+                const puffs = [...new Set(this.data.map(i => i.puffs))].sort((a,b) => parseInt(a)-parseInt(b));
+
+                const bSel = document.getElementById('filter-brand');
+                const pSel = document.getElementById('filter-puffs');
+
+                // Preserve 'all' option
+                bSel.innerHTML = '<option value="all">Brand: All</option>' + brands.map(b => `<option value="${b}">${b}</option>`).join('');
+                pSel.innerHTML = '<option value="all">Puffs: All</option>' + puffs.map(p => `<option value="${p}">${p}</option>`).join('');
+            },
+
+            handleSearch(val) { this.filter.search = val; this.renderStore(); },
+            handleFilter() {
+                this.filter.brand = document.getElementById('filter-brand').value;
+                this.filter.puffs = document.getElementById('filter-puffs').value;
+                this.filter.price = document.getElementById('filter-price').value;
+                this.renderStore();
+            },
+            resetFilters() {
+                document.getElementById('search').value = '';
+                document.getElementById('filter-brand').value = 'all';
+                document.getElementById('filter-puffs').value = 'all';
+                document.getElementById('filter-price').value = 'all';
+                this.filter = { search: '', brand: 'all', puffs: 'all', price: 'all' };
+                this.renderStore();
+            },
+
+            // --- CART LOGIC ---
+            addToCart(id) {
+                const item = this.data.find(i => i.id === id);
+                const existing = this.cart.find(i => i.id === id);
+                if (existing) existing.qty++;
+                else this.cart.push({ ...item, qty: 1 });
+                this.renderCart();
+                this.toast(`Added ${item.name}`);
+            },
+
+            updateQty(id, delta) {
+                const idx = this.cart.findIndex(i => i.id === id);
+                if (idx === -1) return;
+                this.cart[idx].qty += delta;
+                if (this.cart[idx].qty <= 0) this.cart.splice(idx, 1);
+                this.renderCart();
+            },
+
+            renderCart() {
+                const list = document.getElementById('cart-items');
+                const totalEl = document.getElementById('cart-total');
+                const countEl = document.getElementById('cart-count');
+                const overlay = document.getElementById('cart-overlay');
+                const drawer = document.getElementById('cart-drawer');
+
+                // Count
+                const totalQty = this.cart.reduce((a,b) => a+b.qty, 0);
+                countEl.innerText = totalQty;
+                countEl.style.display = totalQty > 0 ? 'block' : 'none';
+
+                // Items
+                if (this.cart.length === 0) {
+                    list.innerHTML = '<div class="h-full flex items-center justify-center text-gray-400 text-xs font-bold uppercase tracking-widest">Bag is Empty</div>';
+                    totalEl.innerText = 'KES 0';
+                    return;
+                }
+
+                let total = 0;
+                list.innerHTML = this.cart.map(i => {
+                    const hasDiscount = i.discount && i.discount > 0;
+                    const finalPrice = hasDiscount ? Math.round(i.price * (1 - i.discount/100)) : i.price;
+                    total += finalPrice * i.qty;
+                    
+                    return `
+                    <div class="flex gap-4 group">
+                        <img src="${i.img}" class="w-16 h-20 object-cover bg-brand-gray mix-blend-multiply">
+                        <div class="flex-1 flex flex-col justify-between py-1">
+                            <div>
+                                <h4 class="text-xs font-bold uppercase tracking-wider">${i.name}</h4>
+                                <p class="text-[10px] text-gray-400 font-bold uppercase">${i.brand} / ${i.puffs}</p>
+                                ${hasDiscount ? `<p class="text-[10px] text-brand-sale font-bold uppercase mt-1">On Sale: -${i.discount}%</p>` : ''}
+                            </div>
+                            <div class="flex justify-between items-end">
+                                <div class="flex items-center border border-gray-200">
+                                    <button onclick="app.updateQty(${i.id}, -1)" class="px-2 py-1 text-xs hover:bg-gray-100">-</button>
+                                    <span class="text-xs font-bold px-1">${i.qty}</span>
+                                    <button onclick="app.updateQty(${i.id}, 1)" class="px-2 py-1 text-xs hover:bg-gray-100">+</button>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-xs font-bold block">KES ${(finalPrice * i.qty).toLocaleString()}</span>
+                                    ${hasDiscount ? `<span class="text-[10px] text-gray-300 line-through block">KES ${(i.price * i.qty).toLocaleString()}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+                totalEl.innerText = `KES ${total.toLocaleString()}`;
+            },
+
+            toggleCart() {
+                const overlay = document.getElementById('cart-overlay');
+                const drawer = document.getElementById('cart-drawer');
+                if (overlay.classList.contains('hidden')) {
+                    overlay.classList.remove('hidden');
+                    setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+                    drawer.classList.remove('translate-x-full');
+                } else {
+                    overlay.classList.add('opacity-0');
+                    drawer.classList.add('translate-x-full');
+                    setTimeout(() => overlay.classList.add('hidden'), 300);
+                }
+            },
+
+            checkout() {
+                if(this.cart.length === 0) return;
+                let msg = "ORDER REQUEST - J_VAPES.KE\n------------------------\n";
+                let total = 0;
+                this.cart.forEach(i => {
+                    const finalPrice = i.discount ? Math.round(i.price * (1 - i.discount/100)) : i.price;
+                    const sub = finalPrice*i.qty;
+                    total += sub;
+                    msg += `• ${i.qty}x ${i.brand} ${i.name} (${i.puffs}) - KES ${sub.toLocaleString()}`;
+                    if(i.discount > 0) msg += ` (OFFER: -${i.discount}%)`;
+                    msg += `\n`;
+                });
+                msg += `------------------------\nTOTAL: KES ${total.toLocaleString()}\n\nLocation: `;
+                window.open(`https://wa.me/${this.config.phone}?text=${encodeURIComponent(msg)}`, '_blank');
+            },
+
+            // --- ADMIN ---
+            attemptLogin() {
+                const input = prompt("Staff Access PIN:");
+                if (input === this.config.pin) this.toggleAdmin(true);
+                else if (input) alert("Access Denied");
+            },
+
+            toggleAdmin(show) {
+                const p = document.getElementById('admin-panel');
+                if (show) {
+                    p.classList.remove('hidden');
+                    this.renderAdminList();
+                } else {
+                    p.classList.add('hidden');
+                }
+            },
+
+            renderAdminList() {
+                document.getElementById('admin-list').innerHTML = this.data.map(p => {
+                    const hasDiscount = p.discount && p.discount > 0;
+                    const finalPrice = hasDiscount ? Math.round(p.price * (1 - p.discount/100)) : p.price;
+                    
+                    return `
+                    <tr class="hover:bg-gray-50 border-b border-gray-50">
+                        <td class="py-3">
+                            <div>${p.name}</div>
+                            ${hasDiscount ? `<span class="text-[10px] text-brand-sale font-bold">-${p.discount}% OFF</span>` : ''}
+                        </td>
+                        <td class="py-3 text-gray-400">${p.brand} (${p.puffs})</td>
+                        <td class="py-3">KES ${finalPrice}</td>
+                        <td class="py-3 text-right">
+                            <button onclick="app.deleteProduct(${p.id})" class="text-red-500 hover:text-red-700 text-xs uppercase font-bold">Delete</button>
+                        </td>
+                    </tr>
+                `}).join('');
+            },
+
+            addProduct() {
+                const name = document.getElementById('adm-name').value;
+                const brand = document.getElementById('adm-brand').value;
+                const puffs = document.getElementById('adm-puffs').value;
+                const price = document.getElementById('adm-price').value;
+                const discount = document.getElementById('adm-discount').value;
+                const img = document.getElementById('adm-img').value;
+
+                if (!name || !price) return alert("Fill required fields");
+
+                this.data.push({ 
+                    id: Date.now(), 
+                    name, 
+                    brand, 
+                    puffs, 
+                    price: Number(price), 
+                    discount: Number(discount) || 0,
+                    img 
+                });
+                this.save();
+                this.populateDropdowns();
+                this.renderStore();
+                this.renderAdminList();
+                
+                // Clear
+                document.getElementById('adm-name').value = '';
+                document.getElementById('adm-price').value = '';
+                document.getElementById('adm-discount').value = '';
+                this.toast('Inventory Updated');
+            },
+
+            deleteProduct(id) {
+                if(!confirm("Remove item?")) return;
+                this.data = this.data.filter(i => i.id !== id);
+                this.save();
+                this.populateDropdowns();
+                this.renderStore();
+                this.renderAdminList();
+            },
+
+            // --- UTILS ---
+            toast(msg) {
+                const t = document.getElementById('toast');
+                t.innerText = msg;
+                t.classList.remove('opacity-0', 'translate-y-4'); // Show
+                t.classList.add('opacity-100', 'translate-y-0');
+                
+                setTimeout(() => {
+                    t.classList.add('opacity-0', 'translate-y-4'); // Hide
+                    t.classList.remove('opacity-100', 'translate-y-0');
+                }, 2000);
+            }
+        };
+
+        // --- GLOBAL FUNCTIONS (Age Gate) ---
+        function verifyAge(isLegal) {
+            if (isLegal) {
+                document.getElementById('age-gate').classList.add('hidden');
+                app.init();
+            } else {
+                document.getElementById('age-error').classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
